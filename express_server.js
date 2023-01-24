@@ -38,7 +38,56 @@ app.get("/urls", (req, res) => {
 });
 
 //----------Adding a Second Route----------
-app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: 'http://localhost:8080/urls/b2xVn2' };
-  res.render("urls_show", templateVars);
+// app.get("/urls/:id", (req, res) => {
+//   const templateVars = { id: req.params.id, longURL: 'http://localhost:8080/urls/b2xVn2' };
+//   res.render("urls_show", templateVars);
+// });
+
+//URL Shortening (Part 1)
+//and new url
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+app.use(express.urlencoded({ extended: true }));
+
+// part 1 and not need for part 2
+// app.post("/urls", (req, res) => {
+//   console.log(req.body); // Log the POST request body to the console
+//   res.send("Ok"); // Respond with 'Ok' (we will replace this)
+// });
+
+//random number for 6
+const generateRandomString = function () {
+  var result = '';
+  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for (var i = 0; i < 6; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+//URL Shortening (Part 2)
+
+// -1- the id-longURL key-value pair are saved to the urlDatabase when it receives a POST request to /urls
+app.post("/urls", (req, res) => {
+  let shortURL = generateRandomString();
+  console.log(req.body.longURL);
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL
+  };
+  res.redirect('http://localhost:8080/urls/' + String(shortURL));
+});
+
+// -2- Redirect Short URLs
+app.post("/urls/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL].longURL;
+  res.redirect(longURL);
+});
+
+//week3 day3 delete button
+app.post('/urls/:id/delete', (req, res) => {
+  delete urlDatabase[req.params.id];
+  res.render("urls_index");
 });
