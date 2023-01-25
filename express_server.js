@@ -1,6 +1,17 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
+const cookieSession = require("cookie-session");
+const bcrypt = require("bcrypt");
+
+const {emailHasUser, userIdFromEmail, urlsForUser, cookieHasUser } = require("./helpers");
+
+//set cookie
+app.use(cookieSession({
+  name: 'session',
+  keys: ['CAITLIN'],
+  maxAge: 24 * 60 * 60 * 1000,
+}));
 
 app.set("view engine", "ejs");
 
@@ -46,7 +57,10 @@ app.get("/urls", (req, res) => {
 //URL Shortening (Part 1)
 //and new url
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  let templateVars = {
+    user: users[req.session.user_id],
+  };
+  res.render("urls_new", templateVars);
 });
 
 app.use(express.urlencoded({ extended: true }));
@@ -80,8 +94,16 @@ app.post("/urls", (req, res) => {
   res.redirect('http://localhost:8080/urls/' + String(shortURL));
 });
 
+app.get("/urls/:shortURL", (req, res) => {
+  let templateVars = {
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL].longURL
+  };
+  res.render("urls_show", templateVars);
+});
+
 // -2- Redirect Short URLs
-app.post("/urls/:id", (req, res) => {
+app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
@@ -90,4 +112,40 @@ app.post("/urls/:id", (req, res) => {
 app.post('/urls/:id/delete', (req, res) => {
   delete urlDatabase[req.params.id];
   res.render("urls_index");
+});
+
+//edit url
+app.post("/urls/:id", (req, res) => {
+  const shortURL = req.params.id;
+  urlDatabase[shortURL].longURL = req.body.newURL;
+  res.redirect('/urls');
+});
+
+//post to login
+app.get("/login", (req, res) => {
+  if (cookieHasUser(req.session.user_id, users)) {
+    res.redirect("/urls");
+  } else {
+    let templateVars = {
+      user: users[req.session.user_id],
+    };
+    res.render("urls_login", templateVars);
+  }
+});
+
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (!emailHasUser(email, users)) {
+    res.status(403).send("There is no account match with this email address");
+  } else {
+    const userID = userIdFromEmail(email, users);
+    if (!bcrypt.compareSync(password, users[userID].password)) {
+      res.status(403).send("The password you entered does not match with the email address");
+    } else {
+      req.session.user_id = userID;
+      res.redirect("/urls");
+    }
+  }
 });
