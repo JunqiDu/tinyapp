@@ -19,7 +19,7 @@ const emailHasUser = function (email, userDatabase) {
 };
 
 //Print email and userDatabase and returns the user ID for the user with the given email address
-const userIdFromEmail = function (email, userDatabase) {
+const getUserByEmail = function (email, userDatabase) {
   for (const user in userDatabase) {
     if (userDatabase[user].email === email) {
       return userDatabase[user].id;
@@ -51,7 +51,7 @@ const cookieHasUser = function (cookie, userDatabase) {
 module.exports = {
   generateRandomString,
   emailHasUser,
-  userIdFromEmail,
+  getUserByEmail,
   urlsForUser,
   cookieHasUser
 };

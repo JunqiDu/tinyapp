@@ -12,7 +12,7 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-const { generateRandomString, emailHasUser, userIdFromEmail, urlsForUser, cookieHasUser } = require("./helpers");
+const { generateRandomString, emailHasUser, getUserByEmail, urlsForUser, cookieHasUser } = require("./helpers");
 
 const urlDatabase = {};
 
@@ -149,7 +149,7 @@ app.post("/login", (req, res) => {
   if (!emailHasUser(email, users)) {
     res.status(403).send("There is no account associated with this email address");
   } else {
-    const userID = userIdFromEmail(email, users);
+    const userID = getUserByEmail(email, users);
     //Use bcrypt When Checking Passwords - W3D4
     if (!bcrypt.compareSync(password, users[userID].password)) {
       res.status(403).send("The password you entered does not match the one associated with the provided email address");
