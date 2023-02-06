@@ -29,9 +29,6 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000,
 }));
 
-
-/* Below are ROUTES */
-
 app.get("/", (req, res) => {
   if (cookieHasUser(req.session.user_id, users)) {
     res.redirect("/urls");
@@ -40,6 +37,7 @@ app.get("/", (req, res) => {
   }
 });
 
+//Add route for /urls in expressserver.js and render using accompanying template
 app.get("/urls", (req, res) => {
   let templateVars = {
     urls: urlsForUser(req.session.user_id, urlDatabase),
@@ -59,6 +57,7 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
+//Add a GET route for /register which renders the registration template
 app.get("/register", (req, res) => {
   if (cookieHasUser(req.session.user_id, users)) {
     res.redirect("/urls");
@@ -82,6 +81,13 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  //check use same user to login
+  if (!users[req.session.user_id]) {
+    return res.status(404).send("You have to login.");
+  } else if (urlDatabase[req.params.shortURL].userID !== req.session.user_id) {
+    return res.status(404).send("Your need to login the same email.");
+  }
+
   if (urlDatabase[req.params.shortURL]) {
     let templateVars = {
       shortURL: req.params.shortURL,
@@ -108,6 +114,7 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
+//In urls_index.ejs template, add a form element for each shortURL which uses a POST method
 app.post("/urls", (req, res) => {
   if (req.session.user_id) {
     const shortURL = generateRandomString();
@@ -121,6 +128,10 @@ app.post("/urls", (req, res) => {
   }
 });
 
+// Add a POST route for /register which will:
+// Add new user object to global users object
+// Set userid cookie
+// Redirect user to /urls page
 app.post("/register", (req, res) => {
   const submittedEmail = req.body.email;
   const submittedPassword = req.body.password;
@@ -142,6 +153,8 @@ app.post("/register", (req, res) => {
   }
 });
 
+//Add POST route for /login to expressserver.js
+//Redirect browser back to /urls page after successful login
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -160,11 +173,13 @@ app.post("/login", (req, res) => {
   }
 });
 
+//Add a POST route for /logout which clears the cookie and redirects user to /urls page
 app.post("/logout", (req, res) => {
   req.session = null;
-  res.redirect('/urls');
+  res.redirect('/login');
 });
 
+//Add POST route for /urls/:id/delete to remove URLs
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userID = req.session.user_id;
   const userUrls = urlsForUser(userID, urlDatabase);
@@ -177,6 +192,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
 });
 
+//Add POST route for /urls/:id to update a resource
 app.post("/urls/:id", (req, res) => {
   const userID = req.session.user_id;
   const userUrls = urlsForUser(userID, urlDatabase);
